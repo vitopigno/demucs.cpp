@@ -22,7 +22,7 @@ using namespace nqr;
 
 static Eigen::MatrixXf load_audio_file(std::string filename)
 {
-    // load a wav file with libnyquist
+    // load a mp3 file with libnyquist
     std::shared_ptr<AudioData> fileData = std::make_shared<AudioData>();
 
     NyquistIO loader;
@@ -77,7 +77,7 @@ static Eigen::MatrixXf load_audio_file(std::string filename)
     return ret;
 }
 
-// write a function to write a StereoWaveform to a wav file
+// write a function to write a StereoWaveform to a mp3 file
 static void write_audio_file(const Eigen::MatrixXf &waveform,
                              std::string filename)
 {
@@ -108,28 +108,19 @@ static void write_audio_file(const Eigen::MatrixXf &waveform,
 
 int main(int argc, const char **argv)
 {
-    if (argc != 5)
-    {
-        std::cerr << "Usage: " << argv[0]
-                  << " <model file> <wav file> <out dir> <num threads>"
-                  << std::endl;
-        exit(1);
-    }
-
     std::cout << "demucs_mt.cpp (Multi-threaded) driver program" << std::endl;
 
     // load model passed as argument
-    std::string model_file = argv[1];
+    std::string model_file = "./ggml_model.bin";
 
     // load audio passed as argument
-    std::string wav_file = argv[2];
+    std::string wav_file = "./target.mp3";
 
     // output dir passed as argument
-    std::string out_dir = argv[3];
+    std::string out_dir = "./out";
 
-    // get num threads from user parameter argv[4]
-    // cast it to int
-    int num_threads = std::stoi(argv[4]);
+    // number of threads used.
+    int num_threads = 4;
 
     Eigen::MatrixXf audio = load_audio_file(wav_file);
     Eigen::Tensor3dXf out_targets;
@@ -149,10 +140,13 @@ int main(int argc, const char **argv)
         exit(1);
     }
 
-    int nb_sources = model.is_4sources ? 4 : 6;
+    if (!model.is_4sources)
+    {
+        std::cerr << "Only 4 sources model is supported" << std::endl;
+        exit(1);
+    }
 
-    std::cout << "Starting Demucs (" << std::to_string(nb_sources)
-              << "-source) inference" << std::endl;
+    std::cout << "Starting Demucs (4-source) inference" << std::endl;
 
     // create 4 audio matrix same size, to hold output
     Eigen::Tensor3dXf audio_targets =
@@ -160,20 +154,19 @@ int main(int argc, const char **argv)
 
     out_targets = audio_targets;
 
-    int nb_out_sources = model.is_4sources ? 4 : 6;
-
-    for (int target = 0; target < nb_out_sources; ++target)
+    // Iterate for all of the sources, drums, bass, other and vocals.
+    for (int target = 0; target < 4; ++target)
     {
         // now write the 4 audio waveforms to files in the output dir
         // using libnyquist
-        // join out_dir with "/target_0.wav"
+        // join out_dir with "/target_0.mp3"
         // using std::filesystem::path;
 
         std::filesystem::path p = out_dir;
         // make sure the directory exists
         std::filesystem::create_directories(p);
 
-        auto p_target = p / "target_0.wav";
+        auto p_target = p / "target_0.mp3";
 
         // target 0,1,2,3 map to drums,bass,other,vocals
 
@@ -193,12 +186,6 @@ int main(int argc, const char **argv)
         case 3:
             target_name = "vocals";
             break;
-        case 4:
-            target_name = "guitar";
-            break;
-        case 5:
-            target_name = "piano";
-            break;
         default:
             std::cerr << "Error: target " << target << " not supported"
                       << std::endl;
@@ -206,15 +193,15 @@ int main(int argc, const char **argv)
         }
 
         // insert target_name into the path after the digit
-        // e.g. target_name_0_drums.wav
+        // e.g. target_name_0_drums.mp3
         p_target.replace_filename("target_" + std::to_string(target) + "_" +
-                                  target_name + ".wav");
+                                  target_name + ".mp3");
 
-        std::cout << "Writing wav file " << p_target << std::endl;
+        std::cout << "Writing mp3 file " << p_target << std::endl;
 
         Eigen::MatrixXf target_waveform(2, audio.cols());
 
-        // copy the input stereo wav file into all 4 targets
+        // copy the input stereo mp3 file into all 4 targets
         for (int channel = 0; channel < 2; ++channel)
         {
             for (int sample = 0; sample < audio.cols(); ++sample)

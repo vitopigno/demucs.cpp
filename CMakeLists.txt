@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.20)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -7,6 +7,7 @@ endif()
 if (WIN32)
     set(CMAKE_CXX_FLAGS "/MD")
 
+    set(CMAKE_CXX_FLAGS_DEBUG "/Zi")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /fp:fast")
 else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra")
@@ -52,11 +53,6 @@ target_link_libraries(demucs.cpp.lib ${LIBRARIES_TO_LINK})
 # compile vendored submodule libnyquist for driver programs
 set(LIBNYQUIST_BUILD_EXAMPLE OFF CACHE BOOL "Disable libnyquist example" FORCE)
 add_subdirectory(vendor/libnyquist)
-
-# Add target to compile demucs.cpp.main, the main driver program for demucs.cpp
-add_executable(demucs.cpp.main "cli-apps/demucs.cpp")
-target_include_directories(demucs.cpp.main PRIVATE vendor/libnyquist/include)
-target_link_libraries(demucs.cpp.main demucs.cpp.lib libnyquist)
 
 add_executable(demucs_mt.cpp.main "cli-apps/demucs_mt.cpp")
 target_include_directories(demucs_mt.cpp.main PRIVATE vendor/libnyquist/include)
