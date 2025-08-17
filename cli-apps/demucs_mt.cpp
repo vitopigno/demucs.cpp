@@ -126,9 +126,7 @@ int main(int argc, const char **argv)
     Eigen::Tensor3dXf out_targets;
 
     // initialize a struct demucs_model
-    struct demucs_model model
-    {
-    };
+    struct demucs_model model{};
 
     // debug some members of model
     auto ret = load_demucs_model(model_file, &model);
