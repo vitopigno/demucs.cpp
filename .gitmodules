@@ -7,4 +7,4 @@
 	branch = release_v4
 [submodule "vendor/libnyquist"]
 	path = vendor/libnyquist
-	url = https://github.com/ddiakopoulos/libnyquist
+	url = https://github.com/vitopigno/libnyquist

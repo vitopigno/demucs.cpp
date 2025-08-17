@@ -5,10 +5,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (WIN32)
-    set(CMAKE_CXX_FLAGS "/MD")
-
     set(CMAKE_CXX_FLAGS_DEBUG "/Zi")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /fp:fast")
+
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
@@ -39,22 +39,22 @@ endif()
 # include src/*.cpp and src/*.c as source files
 file(GLOB SOURCES "src/*.cpp")
 
-add_library(demucs.cpp.lib ${SOURCES})
+add_library(demucs.cpp SHARED ${SOURCES})
 
 # add library Eigen3
 # expose source files to project linking to this one
-target_include_directories(demucs.cpp.lib PUBLIC
+target_include_directories(demucs.cpp PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/eigen
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(demucs.cpp.lib ${LIBRARIES_TO_LINK})
+target_link_libraries(demucs.cpp ${LIBRARIES_TO_LINK})
 
 # compile vendored submodule libnyquist for driver programs
 set(LIBNYQUIST_BUILD_EXAMPLE OFF CACHE BOOL "Disable libnyquist example" FORCE)
 add_subdirectory(vendor/libnyquist)
 
-add_executable(demucs_mt.cpp.main "cli-apps/demucs_mt.cpp")
-target_include_directories(demucs_mt.cpp.main PRIVATE vendor/libnyquist/include)
-target_include_directories(demucs_mt.cpp.main PRIVATE cli-apps)
-target_link_libraries(demucs_mt.cpp.main demucs.cpp.lib libnyquist)
+add_executable(demucs_mt "cli-apps/demucs_mt.cpp")
+target_include_directories(demucs_mt PRIVATE vendor/libnyquist/include)
+target_include_directories(demucs_mt PRIVATE cli-apps)
+target_link_libraries(demucs_mt demucs.cpp libnyquist)
